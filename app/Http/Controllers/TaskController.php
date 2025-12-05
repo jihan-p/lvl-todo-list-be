@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Task;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Exception;
 
 class TaskController extends Controller
 {
@@ -11,17 +14,20 @@ class TaskController extends Controller
      */
     public function index()
     {
-        $tasks = Task::orderBy('priority')->latest()-get();
+        try {
+            $tasks = Task::orderBy('priority')->orderBy('created_at', 'desc')->get();
 
-        return response()->json($tasks);
-    }
+            return response()->json($tasks);
+        } catch (Exception $e) {
+            // Log the actual error for debugging
+            Log::error('Error fetching tasks: ' . $e->getMessage());
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
+            // Return a generic server error response to the client
+            return response()->json([
+                'message' => 'An error occurred while fetching tasks.',
+                'error' => $e->getMessage() // Consider removing this in production for security
+            ], 500);
+        }
     }
 
     /**
@@ -31,16 +37,11 @@ class TaskController extends Controller
     {
         $validateData = $request->validate([
             'name' => 'required|string|max:255',
-            'priority' => 'nullable|integer|between:1,3',
+            'priority' => 'sometimes|integer|between:1,3',
             'due_date' => 'nullable|date',
         ]);
 
-        $task = Task::create([
-            'name' => $validateData['name'],
-            'priority' => $validateData['priority'] ?? 3,
-            'due_date' => $validateData['due_date'] ?? null,
-            'status' => false,
-        ]);
+        $task = Task::create($validateData);
 
         return response()->json($task, 201);
     }
@@ -48,17 +49,9 @@ class TaskController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Task $tasks)
+    public function show(Task $task)
     {
         return response()->json($task);
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
     }
 
     /**
@@ -67,10 +60,9 @@ class TaskController extends Controller
     public function update(Request $request, Task $task)
     {
         $validateData = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
+            'name' => 'sometimes|string|max:255',
             'priority' => 'sometimes|integer|between:1,3',
             'due_date' => 'nullable|date',
-            'status' => 'sometimes|booelan',
         ]);
 
         $task->update($validateData);

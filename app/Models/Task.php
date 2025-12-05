@@ -2,14 +2,21 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Task extends Model
 {
+    use HasFactory;
+
+    public const PRIORITY_HIGH = 1;
+    public const PRIORITY_MEDIUM = 2;
+    public const PRIORITY_LOW = 3;
+
     protected $fillable = [
         'name',
         'status',
-        'proirity',
+        'priority',
         'due_date',
     ];
 
@@ -20,6 +27,6 @@ class Task extends Model
     
     protected $attributes = [
         'status' => false,
-        'priority' => 3,
+        'priority' => self::PRIORITY_LOW,
     ];
 }
